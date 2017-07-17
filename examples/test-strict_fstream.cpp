@@ -5,7 +5,7 @@
 
 template < typename Stream_Type >
 void test_open(const std::string& stream_class, const std::string& stream_type,
-               const std::string& filename, int mode, bool set_fail_bit)
+               const char * filename, int mode, bool set_fail_bit)
 {
     Stream_Type * s_p = new Stream_Type();
     if (set_fail_bit)
@@ -50,27 +50,33 @@ int main(int argc, char * argv[])
             << "  binary=" << std::ios_base::binary << std::endl;
         std::exit(EXIT_FAILURE);
     }
-    std::vector< int > in_mode_v = {
-        0,
-        std::ios_base::in
-    };
-    std::vector< int > out_mode_v = {
-        0,
-        std::ios_base::out,
-        std::ios_base::out | std::ios_base::app,
-        std::ios_base::out | std::ios_base::trunc
-    };
-    std::vector< int > alt_mode_v = {
-        0,
-        std::ios_base::binary,
-        std::ios_base::ate,
-        std::ios_base::binary | std::ios_base::ate
-    };
-    for (const auto& in_mode : in_mode_v)
-        for (const auto& out_mode : out_mode_v)
-            //for (const auto& alt_mode : alt_mode_v)
+
+    std::vector< int > in_mode_v;
+    in_mode_v.push_back(0);
+    in_mode_v.push_back(std::ios_base::in);
+
+    std::vector< int > out_mode_v;
+    out_mode_v.push_back(0);
+    out_mode_v.push_back(std::ios_base::out);
+    out_mode_v.push_back(std::ios_base::out | std::ios_base::app);
+    out_mode_v.push_back(std::ios_base::out | std::ios_base::trunc);
+
+    std::vector< int > alt_mode_v;
+    alt_mode_v.push_back(0);
+    alt_mode_v.push_back(std::ios_base::binary);
+    alt_mode_v.push_back(std::ios_base::ate);
+    alt_mode_v.push_back(std::ios_base::binary | std::ios_base::ate);
+
+    std::vector< int >::iterator in_it;
+    std::vector< int >::iterator out_it;
+    std::vector< int >::iterator alt_it;
+    for (in_it = in_mode_v.begin(); in_it != in_mode_v.end(); in_it++)
+    {
+        for (out_it = out_mode_v.begin(); out_it != out_mode_v.end(); out_it++)
+        {
+            for (alt_it = alt_mode_v.begin(); alt_it != alt_mode_v.end(); alt_it++)
             {
-                int mode = in_mode | out_mode; // | alt_mode;
+                int mode = *in_it | *out_it; // | *alt_it;
                 //test_open< std::ifstream >("std", "ifstream", argv[1], mode, false);
                 //test_open< std::ofstream >("std", "ofstream", argv[1], mode, false);
                 //test_open< std::fstream  >("std", "fstream",  argv[1], mode, false);
@@ -81,4 +87,6 @@ int main(int argc, char * argv[])
                 test_open< strict_fstream::ofstream >("strict_fstream", "ofstream", argv[1], mode, false);
                 test_open< strict_fstream::fstream  >("strict_fstream", "fstream",  argv[1], mode, false);
             }
+        }
+    }
 }

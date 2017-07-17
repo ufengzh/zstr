@@ -30,25 +30,26 @@ void decompress_files(const std::vector< std::string >& file_v, const std::strin
     //
     // Set up sink ostream
     //
-    std::unique_ptr< std::ofstream > ofs_p;
+    std::auto_ptr< std::ofstream > ofs_p;
     std::ostream * os_p = &std::cout;
     if (not output_file.empty())
     {
-        ofs_p = std::unique_ptr< std::ofstream >(new strict_fstream::ofstream(output_file));
+        ofs_p = std::auto_ptr< std::ofstream >(new strict_fstream::ofstream(output_file));
         os_p = ofs_p.get();
     }
     //
     // Process files
     //
-    for (const auto& f : file_v)
+    for (size_t i = 0; i < file_v.size(); i++)
     {
         //
         // If `f` is a file, create a zstr::ifstream, else (it is stdin) create a zstr::istream wrapper
         //
-        std::unique_ptr< std::istream > is_p =
+        const std::string & f = file_v[i];
+        std::auto_ptr< std::istream > is_p =
             (f != "-"
-             ? std::unique_ptr< std::istream >(new zstr::ifstream(f))
-             : std::unique_ptr< std::istream >(new zstr::istream(std::cin)));
+             ? std::auto_ptr< std::istream >(new zstr::ifstream(f))
+             : std::auto_ptr< std::istream >(new zstr::istream(std::cin)));
         //
         // Cat stream
         //
@@ -61,23 +62,24 @@ void compress_files(const std::vector< std::string >& file_v, const std::string&
     //
     // Set up compression sink ostream
     //
-    std::unique_ptr< std::ostream > os_p =
+    std::auto_ptr< std::ostream > os_p =
         (not output_file.empty()
-         ? std::unique_ptr< std::ostream >(new zstr::ofstream(output_file))
-         : std::unique_ptr< std::ostream >(new zstr::ostream(std::cout)));
+         ? std::auto_ptr< std::ostream >(new zstr::ofstream(output_file))
+         : std::auto_ptr< std::ostream >(new zstr::ostream(std::cout)));
     //
     // Process files
     //
-    for (const auto& f : file_v)
+    for (size_t i = 0; i < file_v.size(); i++)
     {
         //
         // If `f` is a file, create an ifstream, else read stdin
         //
-        std::unique_ptr< std::ifstream > ifs_p;
+        const std::string & f = file_v[i];
+        std::auto_ptr< std::ifstream > ifs_p;
         std::istream * is_p = &std::cin;
         if (f != "-")
         {
-            ifs_p = std::unique_ptr< std::ifstream >(new strict_fstream::ifstream(f));
+            ifs_p = std::auto_ptr< std::ifstream >(new strict_fstream::ifstream(f));
             is_p = ifs_p.get();
         }
         //

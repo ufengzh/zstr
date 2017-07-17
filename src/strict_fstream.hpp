@@ -2,6 +2,7 @@
 #define __STRICT_FSTREAM_HPP
 
 #include <cassert>
+#include <cerrno>
 #include <fstream>
 #include <cstring>
 #include <string>
@@ -35,7 +36,7 @@ static std::string strerror()
     }
 #else
 // GNU-specific strerror_r()
-    auto p = strerror_r(errno, &buff[0], buff.size());
+    char *p = strerror_r(errno, &buff[0], buff.size());
     std::string tmp(p, std::strlen(p));
     std::swap(buff, tmp);
 #endif
@@ -49,7 +50,8 @@ class Exception
 {
 public:
     Exception(const std::string& msg) : _msg(msg) {}
-    const char * what() const noexcept { return _msg.c_str(); }
+    ~Exception() throw() {}
+    const char * what() const throw() { return _msg.c_str(); }
 private:
     std::string _msg;
 }; // class Exception
@@ -142,12 +144,16 @@ class ifstream
     : public std::ifstream
 {
 public:
-    ifstream() = default;
-    ifstream(const std::string& filename, std::ios_base::openmode mode = std::ios_base::in)
+    ifstream(): std::ifstream() {}
+    ifstream(const char * filename, std::ios_base::openmode mode = std::ios_base::in)
     {
         open(filename, mode);
     }
-    void open(const std::string& filename, std::ios_base::openmode mode = std::ios_base::in)
+    ifstream(const std::string& filename, std::ios_base::openmode mode = std::ios_base::in)
+    {
+        open(filename.c_str(), mode);
+    }
+    void open(const char * filename, std::ios_base::openmode mode = std::ios_base::in)
     {
         mode |= std::ios_base::in;
         exceptions(std::ios_base::badbit);
@@ -162,12 +168,16 @@ class ofstream
     : public std::ofstream
 {
 public:
-    ofstream() = default;
-    ofstream(const std::string& filename, std::ios_base::openmode mode = std::ios_base::out)
+    ofstream(): std::ofstream() {}
+    ofstream(const char * filename, std::ios_base::openmode mode = std::ios_base::out)
     {
         open(filename, mode);
     }
-    void open(const std::string& filename, std::ios_base::openmode mode = std::ios_base::out)
+    ofstream(const std::string& filename, std::ios_base::openmode mode = std::ios_base::out)
+    {
+        open(filename.c_str(), mode);
+    }
+    void open(const char * filename, std::ios_base::openmode mode = std::ios_base::out)
     {
         mode |= std::ios_base::out;
         exceptions(std::ios_base::badbit);
@@ -181,12 +191,16 @@ class fstream
     : public std::fstream
 {
 public:
-    fstream() = default;
-    fstream(const std::string& filename, std::ios_base::openmode mode = std::ios_base::in)
+    fstream(): std::fstream() {}
+    fstream(const char * filename, std::ios_base::openmode mode = std::ios_base::in)
     {
         open(filename, mode);
     }
-    void open(const std::string& filename, std::ios_base::openmode mode = std::ios_base::in)
+    fstream(const std::string& filename, std::ios_base::openmode mode = std::ios_base::in)
+    {
+        open(filename.c_str(), mode);
+    }
+    void open(const char * filename, std::ios_base::openmode mode = std::ios_base::in)
     {
         if (! (mode & std::ios_base::out)) mode |= std::ios_base::in;
         exceptions(std::ios_base::badbit);

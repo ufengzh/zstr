@@ -52,7 +52,8 @@ public:
         _msg += zstrm_p->msg;
     }
     Exception(const std::string msg) : _msg(msg) {}
-    const char * what() const noexcept { return _msg.c_str(); }
+    ~Exception() throw() {}
+    const char * what() const throw() { return _msg.c_str(); }
 private:
     std::string _msg;
 }; // class Exception
@@ -107,7 +108,7 @@ public:
     istreambuf(std::streambuf * _sbuf_p,
                std::size_t _buff_size = default_buff_size, bool _auto_detect = true)
         : sbuf_p(_sbuf_p),
-          zstrm_p(nullptr),
+          zstrm_p(NULL),
           buff_size(_buff_size),
           auto_detect(_auto_detect),
           auto_detect_run(false),
@@ -121,10 +122,10 @@ public:
         setg(out_buff, out_buff, out_buff);
     }
 
-    istreambuf(const istreambuf &) = delete;
-    istreambuf(istreambuf &&) = default;
-    istreambuf & operator = (const istreambuf &) = delete;
-    istreambuf & operator = (istreambuf &&) = default;
+    // istreambuf(const istreambuf &) = delete;
+    // istreambuf(istreambuf &&) = default;
+    // istreambuf & operator = (const istreambuf &) = delete;
+    // istreambuf & operator = (istreambuf &&) = default;
 
     virtual ~istreambuf()
     {
@@ -178,23 +179,23 @@ public:
                 {
                     // run inflate() on input
                     if (! zstrm_p) zstrm_p = new detail::z_stream_wrapper(true);
-                    zstrm_p->next_in = reinterpret_cast< decltype(zstrm_p->next_in) >(in_buff_start);
+                    zstrm_p->next_in = reinterpret_cast< typeof(zstrm_p->next_in) >(in_buff_start);
                     zstrm_p->avail_in = in_buff_end - in_buff_start;
-                    zstrm_p->next_out = reinterpret_cast< decltype(zstrm_p->next_out) >(out_buff_free_start);
+                    zstrm_p->next_out = reinterpret_cast< typeof(zstrm_p->next_out) >(out_buff_free_start);
                     zstrm_p->avail_out = (out_buff + buff_size) - out_buff_free_start;
                     int ret = inflate(zstrm_p, Z_NO_FLUSH);
                     // process return code
                     if (ret != Z_OK && ret != Z_STREAM_END) throw Exception(zstrm_p, ret);
                     // update in&out pointers following inflate()
-                    in_buff_start = reinterpret_cast< decltype(in_buff_start) >(zstrm_p->next_in);
+                    in_buff_start = reinterpret_cast< typeof(in_buff_start) >(zstrm_p->next_in);
                     in_buff_end = in_buff_start + zstrm_p->avail_in;
-                    out_buff_free_start = reinterpret_cast< decltype(out_buff_free_start) >(zstrm_p->next_out);
+                    out_buff_free_start = reinterpret_cast< typeof(out_buff_free_start) >(zstrm_p->next_out);
                     assert(out_buff_free_start + zstrm_p->avail_out == out_buff + buff_size);
                     // if stream ended, deallocate inflator
                     if (ret == Z_STREAM_END)
                     {
                         delete zstrm_p;
-                        zstrm_p = nullptr;
+                        zstrm_p = NULL;
                     }
                 }
             } while (out_buff_free_start == out_buff);
@@ -238,21 +239,21 @@ public:
         setp(in_buff, in_buff + buff_size);
     }
 
-    ostreambuf(const ostreambuf &) = delete;
-    ostreambuf(ostreambuf &&) = default;
-    ostreambuf & operator = (const ostreambuf &) = delete;
-    ostreambuf & operator = (ostreambuf &&) = default;
+    // ostreambuf(const ostreambuf &) = delete;
+    // ostreambuf(ostreambuf &&) = default;
+    // ostreambuf & operator = (const ostreambuf &) = delete;
+    // ostreambuf & operator = (ostreambuf &&) = default;
 
     int deflate_loop(int flush)
     {
         while (true)
         {
-            zstrm_p->next_out = reinterpret_cast< decltype(zstrm_p->next_out) >(out_buff);
+            zstrm_p->next_out = reinterpret_cast< typeof(zstrm_p->next_out) >(out_buff);
             zstrm_p->avail_out = buff_size;
             int ret = deflate(zstrm_p, flush);
             if (ret != Z_OK && ret != Z_STREAM_END && ret != Z_BUF_ERROR) throw Exception(zstrm_p, ret);
-            std::streamsize sz = sbuf_p->sputn(out_buff, reinterpret_cast< decltype(out_buff) >(zstrm_p->next_out) - out_buff);
-            if (sz != reinterpret_cast< decltype(out_buff) >(zstrm_p->next_out) - out_buff)
+            std::streamsize sz = sbuf_p->sputn(out_buff, reinterpret_cast< typeof(out_buff) >(zstrm_p->next_out) - out_buff);
+            if (sz != reinterpret_cast< typeof(out_buff) >(zstrm_p->next_out) - out_buff)
             {
                 // there was an error in the sink stream
                 return -1;
@@ -282,14 +283,14 @@ public:
     }
     virtual std::streambuf::int_type overflow(std::streambuf::int_type c = traits_type::eof())
     {
-        zstrm_p->next_in = reinterpret_cast< decltype(zstrm_p->next_in) >(pbase());
+        zstrm_p->next_in = reinterpret_cast< typeof(zstrm_p->next_in) >(pbase());
         zstrm_p->avail_in = pptr() - pbase();
         while (zstrm_p->avail_in > 0)
         {
             int r = deflate_loop(Z_NO_FLUSH);
             if (r != 0)
             {
-                setp(nullptr, nullptr);
+                setp(NULL, NULL);
                 return traits_type::eof();
             }
         }
@@ -302,7 +303,7 @@ public:
         overflow();
         if (! pptr()) return -1;
         // then, call deflate asking to finish the zlib stream
-        zstrm_p->next_in = nullptr;
+        zstrm_p->next_in = NULL;
         zstrm_p->avail_in = 0;
         if (deflate_loop(Z_FINISH) != 0) return -1;
         deflateReset(zstrm_p);
